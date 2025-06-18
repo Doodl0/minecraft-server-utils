@@ -1,6 +1,6 @@
 Functionality
-Download server jars
-Download openjdk jre
+Download server jars DONE
 Install server in specified folder (agree to eula)
 Modify server.properties
 Modify worlds
+Make downloading / file saving asyncronous
