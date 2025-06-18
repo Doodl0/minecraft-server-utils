@@ -1,0 +1,6 @@
+Functionality
+Download server jars
+Download openjdk jre
+Install server in specified folder (agree to eula)
+Modify server.properties
+Modify worlds
