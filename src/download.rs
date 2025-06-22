@@ -40,7 +40,7 @@ fn save_file(url: &str, filepath: String) {
     io::copy(&mut response, &mut file).unwrap();
 } 
 
-pub fn download_server_jar(version: Option<&str>, filepath: String, manifest: Option<&str>) {
+pub fn download_server_jar(version: Option<&str>, filepath: &str, manifest: Option<&str>) {
     let url: &str;
     let ver: String;
     match manifest {
@@ -57,7 +57,7 @@ pub fn download_server_jar(version: Option<&str>, filepath: String, manifest: Op
     let download_link =
         get_json_manifest(&version_url.as_str())["downloads"]["server"]["url"].to_string().replace('"', "");
 
-    save_file(&download_link, filepath);
+    save_file(&download_link, filepath.to_string());
 }
 
 pub fn get_version_list(manifest: Option<&str>) -> (VecDeque<String>, VecDeque<String>) {

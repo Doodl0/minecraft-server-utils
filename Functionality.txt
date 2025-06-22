@@ -1,6 +1,7 @@
 Functionality
 Download server jars DONE
-Install server in specified folder (agree to eula)
+Install server in specified folder DONE
+Agree to eula
 Modify server.properties
 Modify worlds
 Make downloading / file saving asyncronous
