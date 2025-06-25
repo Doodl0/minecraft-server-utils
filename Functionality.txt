@@ -1,6 +1,7 @@
 Functionality
 Download server jars DONE
 Install server in specified folder DONE
+Abstract functions more
 Agree to eula
 Modify server.properties
 Modify worlds

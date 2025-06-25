@@ -1,14 +1,13 @@
 use reqwest::blocking::Response;
-use std::collections::{VecDeque};
 use std::fs::File;
-use std::io;
+use std::io::{self};
 
 const DEFAULT_MANIFEST: &str = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
 
 fn get_json_manifest(url: &str) -> serde_json::Value {
-    let manifest:Response = reqwest::blocking::get(url).unwrap();
+    let manifest:Response = reqwest::blocking::get(url).expect(format!("Couldn't recieve JSON manifest {}, please check your internet connection or the manifest URL.", url).as_str());
 
-    let manifest_json:serde_json::Value = serde_json::from_str(&manifest.text().unwrap()).unwrap();
+    let manifest_json:serde_json::Value = serde_json::from_str(&manifest.text().expect("Couldn't convert JSON manifest to text.")).unwrap();
     return manifest_json;
 }
 
@@ -35,9 +34,10 @@ fn get_version_url(version: &str, url: &str) -> Option<String> {
 }
 
 fn save_file(url: &str, filepath: String) {
-    let mut response = reqwest::blocking::get(url).unwrap();
-    let mut file = File::create(filepath).unwrap();
-    io::copy(&mut response, &mut file).unwrap();
+    let mut response = reqwest::blocking::get(url).expect(format!("Couldn't recieve JSON manifest {}, please check your internet connection or the manifest URL.", url).as_str());
+    let mut file = File::create(filepath).expect("Failed creating filepath");
+    
+    let _ = io::copy(&mut response, &mut file).expect("silly");
 } 
 
 pub fn download_server_jar(version: Option<&str>, filepath: &str, manifest: Option<&str>) {
@@ -56,11 +56,10 @@ pub fn download_server_jar(version: Option<&str>, filepath: &str, manifest: Opti
 
     let download_link =
         get_json_manifest(&version_url.as_str())["downloads"]["server"]["url"].to_string().replace('"', "");
-
     save_file(&download_link, filepath.to_string());
 }
 
-pub fn get_version_list(manifest: Option<&str>) -> (VecDeque<String>, VecDeque<String>) {
+pub fn get_version_list(manifest: Option<&str>) -> (Vec<String>, Vec<String>) {
     let url: &str;
     match manifest {
         Some(t) => url = t,
@@ -70,15 +69,15 @@ pub fn get_version_list(manifest: Option<&str>) -> (VecDeque<String>, VecDeque<S
     let versions = &get_json_manifest(url)["versions"];
     let versions = versions.as_array().unwrap();
 
-    let mut release_list= VecDeque::new();
-    let mut snapshot_list= VecDeque::new();
+    let mut release_list= Vec::new();
+    let mut snapshot_list= Vec::new();
 
     for version in versions{
         let id: String = version["id"].to_string().replace('"', "");
         let release_type: String = version["type"].to_string().replace('"', "");
         match release_type.as_str(){
-            "release" => release_list.push_back(id),
-            "snapshot" => snapshot_list.push_back(id),
+            "release" => release_list.push(id),
+            "snapshot" => snapshot_list.push(id),
             _ => ()
         }
     }
