@@ -1,7 +1,9 @@
-mod download;
+mod manage_server;
+mod save_server;
 use cursive::{Cursive, CursiveExt, view::Resizable, views::*};
 
-use crate::download::{download_server_jar, get_version_list};
+use crate::manage_server::*;
+use crate::save_server::*;
 
 fn main() {
     let mut siv = Cursive::default();
@@ -21,22 +23,18 @@ fn main() {
             EditView::new()
                 .content(format!("Vanilla{}", return_ver_from_index(i)))
                 .on_submit(move |s, text| {
-
-                    let _ = std::fs::create_dir_all(format!(
-                        r#"{var1}\servers\{var2}\"#,
-                        var1 = std::env::home_dir().unwrap().as_os_str().to_str().unwrap(),
-                        var2 = text
-                    ));
-                    
-                    save_selected_file(
+                    create_server_directory(text);
+                    save_server_file_from_index(
                         i,
                         format!(
-                            r#"{var1}\servers\{var2}\server.jar"#,
-                            var1 = std::env::home_dir().unwrap().as_os_str().to_str().unwrap(),
-                            var2 = text
+                            r#"{home}{sep}servers{sep}{server_name}{sep}server.jar"#,
+                            sep = std::path::MAIN_SEPARATOR_STR,
+                            home = std::env::home_dir().unwrap().as_os_str().to_str().unwrap(),
+                            server_name = text
                         )
                         .as_str(),
                     );
+                    agree_to_eula(text);
 
                     s.pop_layer();
                 })
@@ -47,19 +45,14 @@ fn main() {
 
     let scroll_view = ScrollView::new(select_view);
     let resized_view = ResizedView::with_full_width(scroll_view);
+    let title_view = Panel::new(resized_view).title("Select a sever version to download (Vanilla)");
 
-    siv.add_layer(resized_view);
+    siv.add_layer(title_view);
     siv.run();
 }
 
-fn return_ver_from_index(item: i32) -> String {
+pub fn return_ver_from_index(item: i32) -> String {
     let i: usize = (item).try_into().unwrap();
     let (list, _) = get_version_list(None);
     return list[i].to_string();
-}
-
-fn save_selected_file(item: i32, filepath: &str) {
-    let i: usize = (item).try_into().expect("Failed parsing version index");
-    let (list, _) = get_version_list(None);
-    download_server_jar(Some(list[i].as_str()), filepath, None);
 }

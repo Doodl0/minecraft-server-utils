@@ -1,19 +1,22 @@
 use reqwest::blocking::Response;
-use std::fs::File;
-use std::io::{self};
 
 const DEFAULT_MANIFEST: &str = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
 
 fn get_json_manifest(url: &str) -> serde_json::Value {
     let manifest:Response = reqwest::blocking::get(url).expect(format!("Couldn't recieve JSON manifest {}, please check your internet connection or the manifest URL.", url).as_str());
 
-    let manifest_json:serde_json::Value = serde_json::from_str(&manifest.text().expect("Couldn't convert JSON manifest to text.")).unwrap();
+    let manifest_json: serde_json::Value = serde_json::from_str(
+        &manifest
+            .text()
+            .expect("Couldn't convert JSON manifest to text."),
+    )
+    .unwrap();
     return manifest_json;
 }
 
 fn get_latest_version(url: &str) -> String {
     let manifest: serde_json::Value = get_json_manifest(url);
-    return manifest["latest"]["release"].to_string().replace('"',"");
+    return manifest["latest"]["release"].to_string().replace('"', "");
 }
 
 fn get_version_url(version: &str, url: &str) -> Option<String> {
@@ -21,10 +24,9 @@ fn get_version_url(version: &str, url: &str) -> Option<String> {
     let versions: Option<&Vec<serde_json::Value>> = manifest["versions"].as_array();
 
     for id in versions.unwrap() {
-        let ver: String = id["id"].to_string().replace('"',"");
+        let ver: String = id["id"].to_string().replace('"', "");
 
         if version == ver {
-            
             let url: String = id["url"].to_string().replace('"', "");
             return Some(url);
         }
@@ -33,19 +35,12 @@ fn get_version_url(version: &str, url: &str) -> Option<String> {
     return None;
 }
 
-fn save_file(url: &str, filepath: String) {
-    let mut response = reqwest::blocking::get(url).expect(format!("Couldn't recieve JSON manifest {}, please check your internet connection or the manifest URL.", url).as_str());
-    let mut file = File::create(filepath).expect("Failed creating filepath");
-    
-    let _ = io::copy(&mut response, &mut file).expect("silly");
-} 
-
-pub fn download_server_jar(version: Option<&str>, filepath: &str, manifest: Option<&str>) {
+fn download_server_jar(version: Option<&str>, filepath: &str, manifest: Option<&str>) {
     let url: &str;
     let ver: String;
     match manifest {
         Some(t) => url = t,
-        None => url = DEFAULT_MANIFEST
+        None => url = DEFAULT_MANIFEST,
     }
     match version {
         Some(t) => ver = t.to_string(),
@@ -54,33 +49,47 @@ pub fn download_server_jar(version: Option<&str>, filepath: &str, manifest: Opti
 
     let version_url = get_version_url(&ver, url).unwrap().replace('"', "");
 
-    let download_link =
-        get_json_manifest(&version_url.as_str())["downloads"]["server"]["url"].to_string().replace('"', "");
+    let download_link = get_json_manifest(&version_url.as_str())["downloads"]["server"]["url"]
+        .to_string()
+        .replace('"', "");
     save_file(&download_link, filepath.to_string());
+}
+
+fn save_file(url: &str, filepath: String) {
+    let mut response = reqwest::blocking::get(url).expect(format!("Couldn't recieve JSON manifest {}, please check your internet connection or the manifest URL.", url).as_str());
+    let mut file = std::fs::File::create(filepath).expect("Failed creating filepath");
+
+    let _ = std::io::copy(&mut response, &mut file).expect("silly");
 }
 
 pub fn get_version_list(manifest: Option<&str>) -> (Vec<String>, Vec<String>) {
     let url: &str;
     match manifest {
         Some(t) => url = t,
-        None => url = DEFAULT_MANIFEST
+        None => url = DEFAULT_MANIFEST,
     }
 
     let versions = &get_json_manifest(url)["versions"];
     let versions = versions.as_array().unwrap();
 
-    let mut release_list= Vec::new();
-    let mut snapshot_list= Vec::new();
+    let mut release_list = Vec::new();
+    let mut snapshot_list = Vec::new();
 
-    for version in versions{
+    for version in versions {
         let id: String = version["id"].to_string().replace('"', "");
         let release_type: String = version["type"].to_string().replace('"', "");
-        match release_type.as_str(){
+        match release_type.as_str() {
             "release" => release_list.push(id),
             "snapshot" => snapshot_list.push(id),
-            _ => ()
+            _ => (),
         }
     }
 
     return (release_list, snapshot_list);
+}
+
+pub fn save_server_file_from_index(item: i32, filepath: &str) {
+    let i: usize = (item).try_into().expect("Failed parsing version index");
+    let (list, _) = get_version_list(None);
+    download_server_jar(Some(list[i].as_str()), filepath, None);
 }

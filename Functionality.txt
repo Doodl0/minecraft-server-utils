@@ -1,8 +1,9 @@
 Functionality
 Download server jars DONE
 Install server in specified folder DONE
-Abstract functions more
-Agree to eula
+Make paths platform agnostic DONE
+Abstract functions more ¯\_(ツ)_/¯
+Agree to eula DONE
 Modify server.properties
 Modify worlds
 Make downloading / file saving asyncronous
