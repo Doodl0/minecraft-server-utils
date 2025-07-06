@@ -2,7 +2,7 @@ use crate::create_server::*;
 use crate::manage_server::*;
 use cursive::{Cursive, view::Resizable, views::*};
 
-pub fn download_server(siv: &mut Cursive, ver_type: VersionType) {
+fn download_server(siv: &mut Cursive, ver_type: VersionType) {
     let version_list = get_version_list(None, ver_type);
 
     let mut select_view: SelectView<usize> = cursive::views::SelectView::new();
@@ -29,6 +29,8 @@ pub fn download_server(siv: &mut Cursive, ver_type: VersionType) {
 
                         // Automatically create a server in the home directory
                         server.create_server_directory(None);
+                        // Add to list of created servers
+                        server.add_to_server_list();
 
                         // Download and save server.jar
                         save_server_file_from_index(
@@ -45,6 +47,7 @@ pub fn download_server(siv: &mut Cursive, ver_type: VersionType) {
                         // Create a eula file and agree to it
                         server.agree_to_eula();
 
+                        s.pop_layer();
                         s.pop_layer();
                         s.pop_layer();
                     })
@@ -68,6 +71,8 @@ pub fn download_server(siv: &mut Cursive, ver_type: VersionType) {
 
                         // Automatically create a server in the home directory
                         server.create_server_directory(None);
+                        // Add to list of created servers
+                        server.add_to_server_list();
 
                         // Download and save server.jar
                         save_server_file_from_index(
@@ -86,6 +91,7 @@ pub fn download_server(siv: &mut Cursive, ver_type: VersionType) {
 
                         s.pop_layer();
                         s.pop_layer();
+                        s.pop_layer();
                     })
                     .fixed_width(25),
             );
@@ -99,4 +105,20 @@ pub fn download_server(siv: &mut Cursive, ver_type: VersionType) {
         Panel::new(resized_view).title("Select a server version to download (Vanilla)");
 
     siv.add_layer(title_view);
+}
+
+pub fn select_version_type(siv: &mut Cursive) {
+    let mut select = SelectView::new();
+    select.add_item("Release", 0);
+    select.add_item("Snapshot", 1);
+    select.set_on_submit(|s, value| {
+        match value {
+            0 => download_server( s , VersionType::Release),
+            1 => download_server( s , VersionType::Snapshot),
+            _ => ()
+        }
+    });
+
+    let title = Panel::new(select).title("Select the type of game version you want to download");
+    siv.add_layer(title);
 }

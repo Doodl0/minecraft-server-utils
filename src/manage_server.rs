@@ -1,5 +1,8 @@
-use std::io::Write;
+use serde::{Deserialize, Serialize};
+use std::fs::OpenOptions;
+use std::io::{BufReader, BufWriter, Write};
 
+#[derive(Serialize, Deserialize)]
 pub struct ServerInstance {
     name: String,
     folder: String,
@@ -7,7 +10,7 @@ pub struct ServerInstance {
     version_type: VersionType,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum VersionType {
     Release,
     Snapshot,
@@ -63,4 +66,41 @@ impl ServerInstance {
         // Create server folder
         let _ = std::fs::create_dir_all(&self.folder);
     }
+
+    pub fn add_to_server_list(&mut self) {
+        let self_owned = ServerInstance {
+            name: self.name.to_owned(),
+            folder: self.folder.to_owned(),
+            version: self.version.to_owned(),
+            version_type: self.version_type.to_owned(),
+        };
+
+        let mut server_list_file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open("server-list.json").unwrap();
+
+        // If file is empty, make an empty vector
+        let mut data: Vec<ServerInstance> = if server_list_file.metadata().unwrap().len() == 0 {
+            Vec::new()
+        } else {
+            let reader = BufReader::new(&server_list_file);
+            serde_json::from_reader(reader).unwrap()
+        };
+
+        data.push(self_owned);
+
+        let mut server_list_file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open("server-list.json").unwrap();
+        
+        // Serialize and write json to file
+        let serialized_json = serde_json::to_string_pretty(&data).unwrap();
+        server_list_file.write_all(serialized_json.as_bytes()).unwrap();
+        server_list_file.flush().unwrap();
+    }
 }
+
