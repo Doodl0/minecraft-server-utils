@@ -2,7 +2,10 @@ mod create_server;
 mod menus;
 mod server_instance;
 
-use crate::menus::{select_saved_server, select_version_type};
+use crate::{
+    menus::{select_saved_server, select_version_type},
+    server_instance::ServerInstance,
+};
 use cursive::{Cursive, CursiveExt, views::*};
 
 const MENU_OPTIONS: [&str; 4] = [

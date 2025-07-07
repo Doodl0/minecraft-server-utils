@@ -1,7 +1,9 @@
 use std::fs::OpenOptions;
-
+use std::io::Read;
+use std::io::Write;
 use crate::create_server::*;
 use crate::server_instance::*;
+use cursive::view::Nameable;
 use cursive::{Cursive, view::Resizable, views::*};
 
 fn download_server(siv: &mut Cursive, ver_type: VersionType) {
@@ -124,7 +126,10 @@ fn manage_server(siv: &mut Cursive, server: ServerInstance) {
     }
 
     select_view.set_on_submit(move |s: &mut Cursive, index: &usize| match index {
+        0 => (),
+        1 => edit_server_properties(s, server.clone()),
         2 => server_info_dialog(s, server.clone()),
+        3 => (),
         4 => {
             s.pop_layer();
             s.pop_layer();
@@ -152,4 +157,46 @@ fn server_info_dialog(siv: &mut Cursive, server: ServerInstance) {
         });
 
     siv.add_layer(dialog);
+}
+
+fn edit_server_properties(siv: &mut Cursive, server: ServerInstance) {
+    if !std::fs::exists(&format!("{}server.properties", server.folder)).unwrap() {
+        let dialog: Dialog = Dialog::new()
+            .content(TextView::new(
+                "server.properties doesn't exist. Please run the server once first",
+            ))
+            .title("Missing server.properties")
+            .button("Return", |s| {
+                s.pop_layer();
+            });
+        siv.add_layer(dialog);
+    } else {
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(format!("{}server.properties", server.folder))
+            .unwrap();
+        let mut file_contents = String::new();
+        file.read_to_string(&mut file_contents).unwrap();
+
+        let dialog = Dialog::new()
+            .content(TextArea::new().content(file_contents).with_name("text"))
+            .button("Save and return", move|s| {
+                let mut file = OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(format!("{}server.properties", server.folder))
+                    .unwrap();
+                let view: ViewRef<TextArea> = s
+                    .find_name("text").unwrap();
+                let text = view.get_content();
+                file.write_all(text.as_bytes()).unwrap();
+                s.pop_layer();
+            })
+            .button("Return without saving", |s| {
+                s.pop_layer();
+            }).full_screen();
+        siv.add_layer(dialog);
+    }
 }
