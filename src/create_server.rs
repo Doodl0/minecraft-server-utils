@@ -1,6 +1,5 @@
-use reqwest::{blocking::Response};
-
-use crate::manage_server::VersionType;
+use crate::server_instance::VersionType;
+use reqwest::blocking::Response;
 
 const DEFAULT_MANIFEST: &str = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
 
@@ -104,7 +103,7 @@ pub fn get_version_list(manifest: Option<&str>, ver_type: VersionType) -> Vec<St
 
 pub fn save_server_file_from_index(item: usize, filepath: &str, ver_type: VersionType) {
     let i: usize = (item).try_into().expect("Failed parsing version index");
-    let list = get_version_list(None,ver_type);
+    let list = get_version_list(None, ver_type);
     download_server_jar(Some(list[i].as_str()), filepath, None);
 }
 

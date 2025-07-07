@@ -7,4 +7,4 @@ Agree to eula DONE
 Main menu DONE but add more menus to compliment options
 Modify server.properties
 Modify worlds
-Make downloading / file saving asyncronous
+MAYBE Make downloading / file saving asyncronous
