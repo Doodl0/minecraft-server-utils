@@ -1,1 +1,1 @@
-(demo.mp4 "A demo of the program")
+![](demo.mp4 "A demo of the program")
