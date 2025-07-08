@@ -4,7 +4,7 @@ mod server_instance;
 mod settings;
 
 use crate::menus::{program_settings, select_saved_server, select_version_type};
-use cursive::{Cursive, CursiveExt, views::*};
+use cursive::{views::*, Cursive, CursiveExt};
 
 const MENU_OPTIONS: [&str; 4] = [
     "Download new server",
@@ -15,6 +15,7 @@ const MENU_OPTIONS: [&str; 4] = [
 
 fn main() {
     let mut siv = Cursive::default();
+    let _ = siv.load_theme_file("theme.toml");
 
     let mut select = SelectView::new();
     for (index, item) in MENU_OPTIONS.iter().enumerate() {

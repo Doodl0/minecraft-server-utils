@@ -245,7 +245,11 @@ pub fn program_settings(siv: &mut Cursive) {
         _ => (),
     });
 
-    siv.add_layer(select_view);
+    let scroll_view = ScrollView::new(select_view);
+    let resized_view = ResizedView::with_full_screen(scroll_view);
+    let title_view = Panel::new(resized_view).title("Select a setting to change");
+
+    siv.add_layer(title_view);
 }
 
 fn server_folder_dialog(siv: &mut Cursive) {
