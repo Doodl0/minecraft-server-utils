@@ -151,5 +151,5 @@ pub fn get_folder_setting() -> String {
         serde_json::from_reader(reader).unwrap()
     };
 
-    return settings_json["folder"].to_string().replace('"', "");
+    return settings_json["folder"].to_string().replace(r#"\\"#, r#"\"#).replace('"', "");
 }

@@ -42,10 +42,9 @@ fn download_server(siv: &mut Cursive, ver_type: VersionType) {
                     save_server_file_from_index(
                         i,
                         format!(
-                            r#"{home}{sep}servers{sep}{server_name}{sep}server.jar"#,
+                            r#"{folder}{sep}server.jar"#,
                             sep = std::path::MAIN_SEPARATOR_STR,
-                            home = std::env::home_dir().unwrap().as_os_str().to_str().unwrap(),
-                            server_name = text
+                            folder = server.folder,
                         )
                         .as_str(),
                         ver_type,
@@ -215,6 +214,7 @@ fn delete_server(siv: &mut Cursive, server: ServerInstance) {
         })
         .button("Yes", move |s| {
             server.clone().delete();
+            s.pop_layer();
             s.pop_layer();
             s.pop_layer();
         });
