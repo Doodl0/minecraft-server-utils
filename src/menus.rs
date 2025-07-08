@@ -1,13 +1,17 @@
+use crate::create_server::*;
+use crate::server_instance::*;
+use crate::settings;
+use crate::settings::change_download_manifest;
+use crate::settings::change_server_folder;
+use crate::settings::reset_settings;
+use cursive::view::Nameable;
+use cursive::{Cursive, view::Resizable, views::*};
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
-use crate::create_server::*;
-use crate::server_instance::*;
-use cursive::view::Nameable;
-use cursive::{Cursive, view::Resizable, views::*};
 
 fn download_server(siv: &mut Cursive, ver_type: VersionType) {
-    let version_list = get_version_list(None, ver_type);
+    let version_list = get_version_list(Some(&settings::get_manifest_setting()), ver_type);
 
     let mut select_view: SelectView<usize> = cursive::views::SelectView::new();
 
@@ -30,7 +34,7 @@ fn download_server(siv: &mut Cursive, ver_type: VersionType) {
                     );
 
                     // Automatically create a server in the home directory
-                    server.create_server_directory(None);
+                    server.create_server_directory(Some(&settings::get_folder_setting()));
                     // Add to list of created servers
                     server.add_to_server_list();
 
@@ -113,8 +117,7 @@ pub fn select_saved_server(siv: &mut Cursive) {
 }
 
 fn manage_server(siv: &mut Cursive, server: ServerInstance) {
-    let server_options: [&str; 5] = [
-        "Run server",
+    let server_options: [&str; 4] = [
         "Modify server.properties",
         "Server Info",
         "Delete server",
@@ -126,11 +129,10 @@ fn manage_server(siv: &mut Cursive, server: ServerInstance) {
     }
 
     select_view.set_on_submit(move |s: &mut Cursive, index: &usize| match index {
-        0 => (),
-        1 => edit_server_properties(s, server.clone()),
-        2 => server_info_dialog(s, server.clone()),
-        3 => (),
-        4 => {
+        0 => edit_server_properties(s, server.clone()),
+        1 => server_info_dialog(s, server.clone()),
+        2 => delete_server(s, server.clone()),
+        3 => {
             s.pop_layer();
             s.pop_layer();
         }
@@ -181,22 +183,118 @@ fn edit_server_properties(siv: &mut Cursive, server: ServerInstance) {
 
         let dialog = Dialog::new()
             .content(TextArea::new().content(file_contents).with_name("text"))
-            .button("Save and return", move|s| {
+            .button("Save and return", move |s| {
                 let mut file = OpenOptions::new()
                     .read(true)
                     .write(true)
                     .truncate(true)
                     .open(format!("{}server.properties", server.folder))
                     .unwrap();
-                let view: ViewRef<TextArea> = s
-                    .find_name("text").unwrap();
+                let view: ViewRef<TextArea> = s.find_name("text").unwrap();
                 let text = view.get_content();
                 file.write_all(text.as_bytes()).unwrap();
                 s.pop_layer();
             })
             .button("Return without saving", |s| {
                 s.pop_layer();
-            }).full_screen();
+            })
+            .title("server.properties")
+            .full_screen();
         siv.add_layer(dialog);
     }
+}
+
+fn delete_server(siv: &mut Cursive, server: ServerInstance) {
+    let dialog = Dialog::new()
+        .content(TextView::new(
+            "Are you sure you want to delete this server permanently?",
+        ))
+        .title("Confirm deletion")
+        .button("No", |s| {
+            s.pop_layer();
+        })
+        .button("Yes", move |s| {
+            server.clone().delete();
+            s.pop_layer();
+            s.pop_layer();
+        });
+
+    siv.add_layer(dialog);
+}
+
+pub fn program_settings(siv: &mut Cursive) {
+    let setting_options: [&str; 4] = [
+        "Choose the folder where servers are saved",
+        "Change the download manifest",
+        "Reset settings",
+        "Exit",
+    ];
+    let mut select_view = SelectView::new();
+
+    for (index, item) in setting_options.iter().enumerate() {
+        select_view.add_item(*item, index);
+    }
+
+    select_view.set_on_submit(|s: &mut Cursive, index: &usize| match index {
+        0 => server_folder_dialog(s),
+        1 => download_manifest_dialog(s),
+        2 => reset_settings_dialog(s),
+        3 => {
+            s.pop_layer();
+        }
+        _ => (),
+    });
+
+    siv.add_layer(select_view);
+}
+
+fn server_folder_dialog(siv: &mut Cursive) {
+    let dialog = Dialog::new()
+        .content(
+            EditView::new()
+                .content(settings::get_folder_setting())
+                .on_submit(|s, text| {
+                    let text = text.replace(r#"\\"#, r#"\"#);
+                    let text = text.as_str();
+                    if !std::fs::exists(text).expect("Could not check if folder exists") {
+                        s.pop_layer();
+                        let dialog = Dialog::new()
+                            .content(TextView::new("That is not a valid filepath"))
+                            .button("Exit", |cb| {
+                                cb.pop_layer();
+                            });
+                        s.add_layer(dialog);
+                    } else {
+                        change_server_folder(text);
+                        s.pop_layer();
+                    }
+                }),
+        )
+        .title("Type a new folder for servers to be saved");
+
+    siv.add_layer(dialog);
+}
+
+fn download_manifest_dialog(siv: &mut Cursive) {
+    let dialog = Dialog::new().content(EditView::new().content(settings::get_manifest_setting()).on_submit(|s, text| {
+            change_download_manifest(text);
+            s.pop_layer();
+})).title("Type a new download manifest to download servers from (Any custom manifest may break downloading)");
+
+    siv.add_layer(dialog);
+}
+
+fn reset_settings_dialog(siv: &mut Cursive) {
+    let dialog = Dialog::new()
+        .content(TextView::new("Are you sure you want to reset settings?"))
+        .button("Yes", |s| {
+            reset_settings();
+            s.pop_layer();
+        })
+        .button("No", |s| {
+            s.pop_layer();
+        })
+        .title("Confirm reset");
+
+    siv.add_layer(dialog);
 }

@@ -1,7 +1,6 @@
 use crate::server_instance::VersionType;
+use crate::settings::DEFAULT_MANIFEST;
 use reqwest::blocking::Response;
-
-const DEFAULT_MANIFEST: &str = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
 
 // Get manifest of servers from mojang.com (or other manifests)
 fn get_json_manifest(url: &str) -> serde_json::Value {

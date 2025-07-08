@@ -1,11 +1,9 @@
 mod create_server;
 mod menus;
 mod server_instance;
+mod settings;
 
-use crate::{
-    menus::{select_saved_server, select_version_type},
-    server_instance::ServerInstance,
-};
+use crate::menus::{program_settings, select_saved_server, select_version_type};
 use cursive::{Cursive, CursiveExt, views::*};
 
 const MENU_OPTIONS: [&str; 4] = [
@@ -25,6 +23,7 @@ fn main() {
     select.set_on_submit(|s: &mut Cursive, i: &usize| match i {
         0 => select_version_type(s),
         1 => select_saved_server(s),
+        2 => program_settings(s),
         3 => s.quit(),
         _ => (),
     });

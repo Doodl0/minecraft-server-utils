@@ -107,7 +107,39 @@ impl ServerInstance {
             .unwrap();
         server_list_file.flush().unwrap();
     }
-}
+
+    pub fn delete(&mut self) {
+        std::fs::remove_dir_all(self.folder.clone()).expect("Could not delete server folder");
+
+        // Take data from file and rebuild without self 
+        let server_list_file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open("server-list.json")
+            .unwrap();
+        let mut data: Vec<ServerInstance> = list_saved_servers(server_list_file);
+
+        for (index, server) in data.clone().iter().enumerate() {
+            if server.name == self.name {
+                data.remove(index);
+            }
+        }
+
+        let mut server_list_file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open("server-list.json")
+            .unwrap();
+
+        // Serialize and write json to file
+        let serialized_json = serde_json::to_string_pretty(&data).unwrap();
+        server_list_file
+            .write_all(serialized_json.as_bytes())
+            .unwrap();
+        server_list_file.flush().unwrap();
+}}
 
 pub fn list_saved_servers(file: std::fs::File) -> Vec<ServerInstance> {
     // If file is empty, make an empty vec
